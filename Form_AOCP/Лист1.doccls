@@ -1,0 +1,24 @@
+п»їPrivate Sub Worksheet_Change(ByVal Target As Range)
+If Target.Address = [_VPR].Address Then
+'===========================================================================
+Dim i&
+Dim ArrObject As Variant
+Dim Horiz As Double
+'===========================================================================
+Application.ScreenUpdating = False
+ArrObject = Array([_HorizOne], [_HorizTwo], [_HorizThree], [_HorizFour], [_HorizSix], [_HorizSeven], [_HorizApp])
+'===========================================================================
+For i = 0 To UBound(ArrObject)
+    ArrObject(i).UnMerge
+    ArrObject(i).HorizontalAlignment = 7
+    ArrObject(i).EntireRow.AutoFit
+    Horiz = ArrObject(i).RowHeight
+    ArrObject(i).Merge
+    ArrObject(i).RowHeight = Horiz
+    ArrObject(i).HorizontalAlignment = xlLeft
+    ArrObject(i).VerticalAlignment = xlCenter
+Next i
+'===========================================================================
+Application.ScreenUpdating = True
+End If
+End Sub

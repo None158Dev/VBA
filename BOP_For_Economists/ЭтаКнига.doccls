@@ -1,0 +1,7 @@
+п»їOption Explicit
+Private Sub Workbook_SheetBeforeDoubleClick(ByVal sh As Object, ByVal Target As Range, Cancel As Boolean)
+If Not Intersect(Target, SmartsInter) Is Nothing Then FILE_ControlPanel.Show: Cancel = True
+End Sub
+Private Function SmartsInter() As Object
+Set SmartsInter = ActiveSheet.ListObjects(1).Range
+End Function

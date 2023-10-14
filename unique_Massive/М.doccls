@@ -1,0 +1,118 @@
+﻿Option Explicit
+Private Sub SearchPosM()
+Dim i&, G&
+Dim Value As Variant
+
+Dim dicMain As Object
+Dim dicVisPos As Object
+Dim shSeb As ListObject
+
+Dim tempArr As Variant
+Dim VisibleArr As Variant
+Dim arrMain As Variant
+Dim arrNewMarket As Variant
+Dim Infinity As Double
+Dim Area As Variant
+
+Call DisabledApps(False, False)
+Infinity = Timer
+Set dicMain = CreateObject("Scripting.Dictionary")
+Set dicVisPos = CreateObject("Scripting.Dictionary")
+
+arrMain = [pos_M].Value2
+arrNewMarket = [pos_M].Columns(11).Value2
+Set shSeb = [pos_M].Worksheet.ListObjects(1): shSeb.AutoFilter.ShowAllData
+
+For G = 1 To ThisWorkbook.Worksheets.Count
+    With ThisWorkbook.Worksheets(G)
+        If ThisWorkbook.Worksheets.Count = 1 Then MsgBox "Нет листов из которых нужно тянуть данные!", vbCritical, Format(Timer - Infinity, "0.00 сек"): Exit Sub
+        If .CodeName <> "М" Or .CodeName <> "Р" Then
+            For Each Area In .ListObjects(1).DataBodyRange.SpecialCells(xlCellTypeVisible).Areas
+            VisibleArr = Area
+                For i = LBound(VisibleArr) To UBound(VisibleArr)
+                    If VisibleArr(i, 11) <> "" Then
+                        If Not dicVisPos.Exists(VisibleArr(i, 1)) Then
+                            dicVisPos.add VisibleArr(i, 1), VisibleArr(i, 11)
+                        Else
+                            MsgBox "Повтор ключа: " & VisibleArr(i, 1): Exit Sub
+                        End If
+                    End If
+                Next i
+            Next Area
+        Else
+            .ListObjects(1).AutoFilter.ShowAllData
+        End If
+    End With
+Next G
+
+tempArr = Array(dicVisPos.Keys, dicVisPos.Items)
+
+For i = LBound(arrMain) To UBound(arrMain)
+    If Not dicMain.Exists(arrMain(i, 1)) Then
+        dicMain.add arrMain(i, 1), i
+    Else
+        MsgBox "Повтор ключа: " & arrMain(i, 1): Exit Sub
+    End If
+Next i
+
+For i = LBound(tempArr(0)) To UBound(tempArr(0))
+    arrNewMarket(dicMain(tempArr(0)(i)), 1) = tempArr(1)(i)
+Next i
+
+[pos_M].Columns(11).Value2 = arrNewMarket
+Call DisabledApps(True, True)
+MsgBox "Готово!", vbInformation, Format(Timer - Infinity, "0.00 сек")
+End Sub
+Private Sub importfile()
+    Dim fnameList, fnameCurFile As Variant
+    Dim countFiles, countSheets As Integer
+    Dim wksCurSheet As Worksheet
+    Dim wbkCurBook, wbkSrcBook As Workbook
+ 
+    fnameList = Application.GetOpenFilename(FileFilter:="Microsoft Excel Workbooks (*.xls;*.xlsx;*.xlsm;*.xlsb;),*.xls;*.xlsx;*.xlsm;*.xlsb", Title:="Выберите файлы для объединения", MultiSelect:=True)
+    Call DisabledApps(False, False)
+    If (vbBoolean <> VarType(fnameList)) Then
+ 
+        If (UBound(fnameList) > 0) Then
+            countFiles = 0
+            countSheets = 0
+ 
+            Application.ScreenUpdating = False
+            Application.Calculation = xlCalculationManual
+ 
+            Set wbkCurBook = ActiveWorkbook
+ 
+            For Each fnameCurFile In fnameList
+                countFiles = countFiles + 1
+ 
+                Set wbkSrcBook = Workbooks.Open(Filename:=fnameCurFile)
+ 
+                For Each wksCurSheet In wbkSrcBook.Sheets
+                    countSheets = countSheets + 1
+                    wksCurSheet.Copy after:=wbkCurBook.Sheets(wbkCurBook.Sheets.Count)
+                Next
+ 
+                wbkSrcBook.Close SaveChanges:=False
+ 
+            Next
+ 
+            Application.ScreenUpdating = True
+            Application.Calculation = xlCalculationAutomatic
+            Worksheets("УНИК Материалы").Activate
+            
+            MsgBox "Из " & countFiles & " файлов" & vbCrLf & "Собрано " & countSheets & " листа", Title:="Объединение файлов"
+        End If
+ 
+    Else
+        MsgBox "Нет выбранных файлов!", vbCritical, "Объединение файлов"
+    End If
+    [pos_M].Worksheet.Activate
+    Call DisabledApps(True, True)
+End Sub
+Public Function DisabledApps(OnOff As Boolean, CalculateApp As Boolean): If CalculateApp = False Then CalculateApp = xlManual Else CalculateApp = xlAutomatic
+Application.ScreenUpdating = OnOff
+Application.Calculation = CalculateApp
+Application.AskToUpdateLinks = OnOff
+Application.DisplayAlerts = OnOff
+End Function
+
